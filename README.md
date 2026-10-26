@@ -1,6 +1,6 @@
 # Quantitative Market Analysis
 
-I developed Quantitative Market Analysis, a full-stack application for exploring historical stock market behavior through financial analytics, statistical anomaly detection, and machine learning. PostgreSQL and SQL power the analysis of historical market data, while a Python backend and React dashboard deliver anomaly results and interactive visualizations. The application also supports on-demand stock data ingestion, automated market data updates, and query optimization for large datasets.
+I developed Quantitative Market Analysis, a full-stack application for exploring historical stock market behavior and identifying unusual activity. It combines financial analytics with statistical anomaly detection and exploratory machine learning to put price and volume movements in historical context. The application uses PostgreSQL, Python, and React to turn daily market data into interactive analysis—not forecasts.
 
 ### Dashboard Overview
 
@@ -8,29 +8,87 @@ I developed Quantitative Market Analysis, a full-stack application for exploring
 
 *Interactive dashboard featuring company selection, ticker search, and on-demand market data analysis.*
 
-## Features
+## Quantitative Analysis and Why It Matters
 
-- **Financial Analytics:** Calculate stock returns, moving averages, volatility, and performance rankings using PostgreSQL queries.
-- **Anomaly Detection:** Identify unusual price movements and trading activity using Rolling Z-Score, Relative Volume, and Local Outlier Factor (LOF).
-- **Interactive Dashboard:** Explore historical stock prices, statistical indicators, and detected anomalies through interactive charts.
-- **Dynamic Stock Analysis:** Search for publicly traded companies and retrieve historical market data on demand through Alpha Vantage.
-- **Automated Data Refresh:** Check for newly available trading-day data and update existing analyses.
-- **Database Optimization:** Benchmark SQL queries against over one million records and improve execution performance through query optimization and indexing.
-- **Containerized Deployment:** Run the complete application using Docker Compose.
+The analysis compares each daily observation with prior trading sessions. These complementary views help distinguish a large movement from one that is unusual for the stock, assess trading activity around it, and explore combinations of indicators without implying future performance.
 
-## Tech Stack
+### Statistical Anomaly Detection
 
-| Component | Technologies |
-|---|---|
-| Frontend | React, JavaScript, Vite, Recharts |
-| Backend | Python, FastAPI |
-| Database | PostgreSQL 16, SQLAlchemy, psycopg |
-| Machine Learning | scikit-learn |
-| Data Source | Alpha Vantage API |
-| Infrastructure | Docker, Docker Compose, Nginx |
-| Testing | pytest, JavaScript automated tests |
+A **Rolling Z-Score** measures a daily return relative to the stock's mean return and standard deviation over the preceding **60 trading sessions**. Because stocks have different typical levels of fluctuation, this standardization helps show whether a move is unusual for that stock rather than merely large in absolute terms; observations with **|Z| ≥ 2.5** are flagged.
 
-## Architecture
+**Relative Volume** compares the session's trading volume with the average of the preceding **20 trading sessions**, flagging ratios of **2.5× or higher**. It adds participation context to the return signal: a large move with unusually high volume differs from one on ordinary volume, but high volume does not confirm a move's direction or future continuation.
+
+![Anomaly detector cards and historical Rolling Z-Score timeline](./docs/screenshots/anomaly-detection.png)
+
+*Rolling Z-Score, Relative Volume, and Local Outlier Factor detectors, alongside a historical Z-Score timeline highlighting unusual stock returns.*
+
+### Trading Volume and Volatility
+
+Relative volume provides a historical baseline for judging whether trading activity was elevated during a session. The dashboard also plots the **20-session sample standard deviation of daily returns** against its prior **60-session mean**; this helps put changing levels of fluctuation in context. Volatility measures variability, not the direction of future returns.
+
+![Relative volume timeline and rolling volatility charts](./docs/screenshots/volume-volatility.png)
+
+*Relative trading volume compared against a 20-session historical baseline, alongside rolling volatility calculated from daily returns.*
+
+### Return Distribution and Volume Relationships
+
+The return histogram shows how often different daily returns occurred, making the tails of the observed distribution easier to inspect against more common movements. The return-versus-volume scatter plot shows whether larger moves coincided with unusual trading activity. These are exploratory views, not separate forecasting algorithms.
+
+![Daily return versus relative volume scatter plot and return distribution histogram](./docs/screenshots/return-distribution.png)
+
+*Daily returns plotted against relative trading volume, alongside an empirical distribution of historical returns.*
+
+### Machine Learning — Local Outlier Factor
+
+**Local Outlier Factor (LOF)** uses scikit-learn to identify sessions whose combination of **daily return, relative volume, and intraday price range** differs from nearby observations. A return or volume value may look ordinary by itself while the combination is unusual, giving LOF a multivariate perspective alongside the individual statistical indicators. The model trains on earlier observations and evaluates subsequent ones to avoid future-data leakage; its novelty scores and feature projections are exploratory, not forecasts.
+
+![LOF novelty score timeline and feature projection](./docs/screenshots/lof-analysis.png)
+
+*LOF novelty scores and a two-dimensional feature projection highlighting observations identified as unusual by the model.*
+
+### Market Data Dashboard
+
+The Market Data dashboard brings historical prices and moving averages together with daily and period returns, volatility, stock rankings, and anomaly classifications. This lets users evaluate an alert in the context of a stock's broader price history rather than interpreting an isolated score.
+
+![Market Data dashboard showing Airbnb metrics, price history, rankings, and anomaly leaderboard](./docs/screenshots/market-data.png)
+
+*Airbnb (ABNB) market analysis featuring historical closing prices, financial indicators, stock performance rankings, and detected anomalies.*
+
+## Results
+
+### Database Performance
+
+The optimized stock-ranking query reduced median execution time in a local PostgreSQL benchmark:
+
+| Local benchmark metric | Original query | Optimized query |
+|---|---:|---:|
+| Median execution time | 33.389 ms | 3.861 ms |
+| Execution time reduction | — | **88.44%** |
+| Dataset | 1,000,300 price records across 203 tickers | 1,000,300 price records across 203 tickers |
+
+These are measurements from the local benchmark workload, not universal performance guarantees.
+
+### Statistical Anomaly Detection
+
+On **September 23, 2026**, Airbnb (ABNB) recorded a **−7.56%** daily return, a Rolling Z-Score of **−2.61**, and Relative Volume of **3.06×**. Both statistical detectors triggered, producing a high-severity classification: the alert combines an unusually large move relative to prior returns with unusually high trading activity. It identifies observed historical behavior; it does not predict the event.
+
+### Machine Learning Analysis
+
+LOF adds an exploratory multivariate view of unusual sessions using return, volume, and intraday range. The dashboard exposes novelty scores and feature projections; no predictive-accuracy claim is made.
+
+### Full-Stack Integration
+
+The completed application combines on-demand historical data ingestion, PostgreSQL-backed analytics, statistical and LOF analysis, REST endpoints with FastAPI, interactive React visualizations, and Docker Compose deployment.
+
+## SQL Analytics and Database Optimization
+
+PostgreSQL stores historical open, high, low, close, and volume (OHLCV) observations. SQL queries use `LAG()` for daily returns, window functions for moving averages, and `STDDEV_SAMP()` for sample volatility; common table expressions (CTEs) organize period-return calculations and stock rankings. The queries are available in [`database/queries.sql`](./database/queries.sql).
+
+The schema uses primary keys, constraints, and ticker/date indexes to maintain data integrity and support historical lookups. For the ranking optimization, the query rewrite uses bounded first/last-close lookups and ranks the resulting returns. PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` plans were used to compare the original and rewritten queries; benchmark results are summarized above and detailed in the [Database Benchmark Report](./database/benchmark_results.md).
+
+The benchmark dataset contains 1,000,000 deterministic synthetic price records plus 300 imported records across 203 tickers. Synthetic records are labeled separately from real market data and excluded from anomaly analysis. The covering-index experiment was not retained; the measured performance improvement is attributed to the query rewrite.
+
+## Architecture and Tech Stack
 
 ```mermaid
 flowchart LR
@@ -41,219 +99,35 @@ flowchart LR
     UI --> API
 ```
 
-The application uses a containerized architecture with separate services for data ingestion, database management, backend processing, and frontend visualization.
-
-- **Data Ingestion:** Python workers retrieve and validate daily OHLCV data from Alpha Vantage.
-- **Database:** PostgreSQL stores historical prices, financial indicators, anomaly results, and ingestion metadata.
-- **Backend:** FastAPI exposes market data and statistical analysis through REST endpoints.
-- **Frontend:** React and Recharts provide interactive visualizations.
-- **Infrastructure:** Docker Compose manages the application services.
-
-## SQL Analytics and Database Optimization
-
-Historical OHLCV market data is stored in PostgreSQL, which supports the application's financial calculations, historical data management, and analytical queries.
-
-### Financial Analytics
-
-The project uses SQL to implement:
-
-- **Daily Returns:** Calculate percentage changes between consecutive closing prices using `LAG()`.
-- **Moving Averages:** Compute rolling averages using SQL window functions.
-- **Volatility:** Measure the sample standard deviation of daily returns using `STDDEV_SAMP()`.
-- **Stock Rankings:** Compare stock performance across selected date ranges using common table expressions (CTEs).
-- **Historical Queries:** Retrieve and filter price observations using indexed ticker and date columns.
-
-These queries are available in [`database/queries.sql`](./database/queries.sql). The implementation uses SQL window functions, common table expressions (CTEs), and indexes to calculate and retrieve financial metrics efficiently.
-
-### Database Design
-
-The relational database manages:
-
-- Company information and ticker symbols.
-- Historical open, high, low, close, and volume (OHLCV) records.
-- Statistical indicators and anomaly detection results.
-- Versioned model runs and classifications.
-- Background ingestion jobs and refresh metadata.
-
-Primary keys and database constraints maintain data integrity and prevent duplicate daily price observations.
-
-### Performance Benchmarking
-
-To evaluate database performance at scale, the project includes a reproducible SQL benchmarking workflow.
-
-- Generated **1,000,000 synthetic price records** for performance testing.
-- Benchmarked analytical queries against **1,000,300 records across 203 tickers**.
-- Used PostgreSQL's `EXPLAIN (ANALYZE, BUFFERS)` to examine execution plans.
-- Optimized a stock performance ranking query through SQL restructuring and indexing.
-- Verified that the optimized query returned identical results.
-
-| Local benchmark metric | Original query | Optimized query |
-|---|---:|---:|
-| Median execution time | 33.389 ms | 3.861 ms |
-| Execution time reduction | — | **88.44%** |
-| Dataset | 1,000,300 records, 203 tickers | 1,000,300 records, 203 tickers |
-
-These results reflect a local PostgreSQL benchmark workload, not a universal performance guarantee. Synthetic benchmark records are kept separate from real market data and are excluded from anomaly analysis.
-
-See the [Database Benchmark Report](./database/benchmark_results.md) for methodology and detailed results.
-
-## Quantitative Anomaly Detection
-
-The application implements three complementary methods for identifying unusual stock market activity.
-
-### 1. Rolling Z-Score
-
-Measures how significantly a stock's daily return deviates from its recent historical behavior.
-
-- Uses the preceding **60 trading days** to calculate the mean and standard deviation.
-- Standardizes each daily return relative to its historical baseline.
-- Flags observations where **|Z| ≥ 2.5**.
-
-### 2. Relative Volume
-
-Identifies unusually high trading activity compared with recent volume.
-
-- Compares current volume against the average of the preceding **20 trading days**.
-- Calculates the ratio between current and average historical volume.
-- Flags observations where **relative volume ≥ 2.5×**.
-
-### 3. Local Outlier Factor (LOF)
-
-Uses machine learning to identify unusual combinations of market indicators.
-
-- Analyzes daily returns, relative volume, and intraday price range.
-- Uses scikit-learn for novelty-based anomaly scoring.
-- Trains on earlier observations and scores subsequent observations to avoid future-data leakage.
-- Provides an exploratory multivariate perspective alongside the statistical methods.
-
-The dashboard also visualizes **20-day rolling volatility** to provide additional context for market behavior.
-
-These methods identify statistical outliers rather than predict future stock prices.
-
-### Quantitative Analysis Visualizations
-
-#### Statistical Anomaly Detection
-
-![Anomaly detector cards and historical Rolling Z-Score timeline](./docs/screenshots/anomaly-detection.png)
-
-*Rolling Z-Score, Relative Volume, and Local Outlier Factor detectors, alongside a historical Z-Score timeline highlighting unusual stock returns.*
-
-#### Trading Volume and Volatility
-
-![Relative volume timeline and rolling volatility charts](./docs/screenshots/volume-volatility.png)
-
-*Relative trading volume compared against a 20-session historical baseline, alongside rolling volatility calculated from daily returns.*
-
-#### Return Distribution and Volume Relationships
-
-![Daily return versus relative volume scatter plot and return distribution histogram](./docs/screenshots/return-distribution.png)
-
-*Daily returns plotted against relative trading volume, alongside an empirical distribution of historical returns.*
-
-#### Machine Learning — Local Outlier Factor
-
-![LOF novelty score timeline and feature projection](./docs/screenshots/lof-analysis.png)
-
-*LOF novelty scores and a two-dimensional feature projection highlighting observations identified as unusual by the model.*
-
-LOF evaluates unusual combinations of daily returns, relative volume, and intraday price range. It is an exploratory anomaly-detection method, not a forecasting model.
-
-## Dashboard
-
-The application includes three main sections:
-
-- **Anomaly Explorer:** Examine statistical anomalies through interactive charts, model scores, and historical comparisons.
-- **Market Data:** Explore stock prices, returns, volatility, and anomaly rankings.
-- **Company Directory:** Browse 100 curated companies or search for additional publicly traded stocks.
-
-Users can select previously loaded companies or retrieve historical data for new tickers directly from the dashboard.
-
-### Market Data Dashboard
-
-![Market Data dashboard showing Airbnb metrics, price history, rankings, and anomaly leaderboard](./docs/screenshots/market-data.png)
-
-*Airbnb (ABNB) market analysis featuring historical closing prices, financial indicators, stock performance rankings, and detected anomalies.*
-
-For example, on September 23, 2026, ABNB's −7.56% daily return had a Rolling Z-Score of −2.61 and Relative Volume of 3.06×; both detectors flagged it as high severity.
-
-## Getting Started
-
-### Prerequisites
-
-- Docker and Docker Compose
-- An Alpha Vantage API key
-
-### Installation
-
-**1. Clone the repository**
-
-```bash
-git clone https://github.com/Shaurya0507/stock-market-analysis.git
-cd stock-market-analysis
-```
-
-**2. Configure environment variables**
-
-```bash
-cp .env.example .env
-```
-
-Add your Alpha Vantage API key to the `.env` file.
-
-**3. Start the application**
-
-```bash
-docker compose up --build
-```
-
-**4. Open the dashboard**
-
-- **Frontend:** `http://localhost:5173`
-- **API Documentation:** `http://localhost:8000/docs`
-
-Select a company or search by ticker symbol. If historical data is unavailable, click **Load Historical Data** to retrieve and analyze it.
-
-### Stopping the Application
-
-```bash
-docker compose down
-```
-
-The PostgreSQL Docker volume persists between runs unless explicitly removed.
-
-**Note:** Alpha Vantage's free-tier API limits may restrict historical coverage and the frequency of new data requests.
-
-## Project Structure
-
-```text
-stock-market-analysis/
-├── backend/             # FastAPI, ingestion, anomaly detection
-├── frontend/            # React dashboard and visualizations
-├── database/            # SQL queries, schema, migrations, benchmarks
-├── scripts/             # Ingestion and benchmarking utilities
-├── tests/               # Backend automated tests
-├── docker-compose.yml
-└── README.md
-```
-
-## Testing
-
-**Backend tests**
-
-```bash
-.venv/bin/python -m pytest -q
-```
-
-Some integration tests require a running PostgreSQL instance and populated historical market data.
-
-**Frontend tests and validation**
-
-```bash
-cd frontend
-npm test
-npm run build
-npm run lint
-```
+Python workers retrieve and validate daily OHLCV data from Alpha Vantage and store it in PostgreSQL. FastAPI serves market data and analysis to the React dashboard; Docker Compose runs the application services.
+
+| Area | Technologies |
+|---|---|
+| Frontend | React, JavaScript, Vite, Recharts |
+| Backend | Python, FastAPI |
+| Database | PostgreSQL 16, SQLAlchemy, psycopg |
+| Machine learning | scikit-learn |
+| Data source | Alpha Vantage API |
+| Infrastructure | Docker, Docker Compose, Nginx |
+| Testing | pytest, JavaScript automated tests |
+
+## Additional Technical Details
+
+- **Data operations:** On-demand ingestion and automated refresh check for newly available daily market data; Alpha Vantage free-tier limits can restrict coverage and request frequency.
+- **API:** FastAPI's interactive documentation is available at `http://localhost:8000/docs` when running locally. Endpoints cover stocks, search and directory, indicators, anomalies, models, ingestion jobs, and market refresh.
+- **Testing:** Backend tests run with `.venv/bin/python -m pytest -q`. From `frontend/`, run `npm test`, `npm run build`, and `npm run lint`. Some backend integration tests require PostgreSQL with historical market data.
+- **Project structure:**
+
+  ```text
+  quantitative-market-analysis/
+  ├── backend/             # FastAPI, ingestion, anomaly detection
+  ├── frontend/            # React dashboard and visualizations
+  ├── database/            # SQL queries, schema, migrations, benchmarks
+  ├── scripts/             # Ingestion and benchmarking utilities
+  ├── tests/               # Backend automated tests
+  ├── docker-compose.yml
+  └── README.md
+  ```
 
 ---
 
