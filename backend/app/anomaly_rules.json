@@ -1,0 +1,11 @@
+{
+  "version": "v2",
+  "return_history_days": 60,
+  "volume_history_days": 20,
+  "volatility_days": 20,
+  "volatility_baseline_days": 60,
+  "price_z_score": 2.5,
+  "high_price_z_score": 3.5,
+  "volume_ratio": 2.5,
+  "high_volume_ratio": 4.0
+}

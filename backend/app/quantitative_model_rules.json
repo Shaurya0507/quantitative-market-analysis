@@ -1,0 +1,27 @@
+{
+  "version": "v2",
+  "rolling_z_score": {
+    "window": 60,
+    "threshold": 2.5
+  },
+  "relative_volume": {
+    "window": 20,
+    "threshold": 2.5,
+    "comparison": "current volume / mean of prior trading-day volume"
+  },
+  "local_outlier_factor": {
+    "minimum_training_observations": 50,
+    "minimum_evaluation_observations": 10,
+    "neighbors": 10,
+    "contamination": 0.05,
+    "feature_names": ["daily_return", "volume_ratio", "intraday_range"],
+    "sample_quality": "exploratory"
+  },
+  "garch_1_1": {
+    "minimum_training_observations": 252,
+    "minimum_evaluation_observations": 20,
+    "shock_threshold": 2.5,
+    "mean": "zero",
+    "innovation_distribution": "student_t"
+  }
+}

@@ -1,0 +1,109 @@
+{
+  "label": "after-lateral-query-rewrite",
+  "query": "stock performance ranking",
+  "date_range": [
+    "2026-07-25",
+    "2026-10-23"
+  ],
+  "runs": 7,
+  "median_execution_ms": 3.861,
+  "samples_execution_ms": [
+    4.333,
+    4.617,
+    4.04,
+    3.682,
+    3.861,
+    3.534,
+    3.117
+  ],
+  "plan_nodes": [
+    {
+      "node_type": "Sort",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 1627,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Subquery Scan",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 1627,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "WindowAgg",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 1627,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Sort",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 1627,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Nested Loop",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 1627,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Nested Loop",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 815,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Seq Scan",
+      "relation": "stocks",
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 3,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Limit",
+      "relation": null,
+      "index": null,
+      "actual_rows": 1,
+      "shared_hit_blocks": 812,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Index Scan",
+      "relation": "stock_prices",
+      "index": "stock_prices_pkey",
+      "actual_rows": 1,
+      "shared_hit_blocks": 812,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Limit",
+      "relation": null,
+      "index": null,
+      "actual_rows": 1,
+      "shared_hit_blocks": 812,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Index Scan",
+      "relation": "stock_prices",
+      "index": "stock_prices_pkey",
+      "actual_rows": 1,
+      "shared_hit_blocks": 812,
+      "shared_read_blocks": 0
+    }
+  ]
+}

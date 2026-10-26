@@ -1,0 +1,133 @@
+{
+  "label": "rejected-covering-index-experiment",
+  "query": "stock performance ranking",
+  "date_range": [
+    "2026-07-25",
+    "2026-10-23"
+  ],
+  "runs": 7,
+  "median_execution_ms": 64.752,
+  "samples_execution_ms": [
+    72.077,
+    82.71,
+    88.08,
+    64.752,
+    59.517,
+    61.154,
+    63.668
+  ],
+  "plan_nodes": [
+    {
+      "node_type": "Sort",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 72,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Hash Join",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 72,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Seq Scan",
+      "relation": "stocks",
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 3,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Hash",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Subquery Scan",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "WindowAgg",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Sort",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Subquery Scan",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "WindowAgg",
+      "relation": null,
+      "index": null,
+      "actual_rows": 203,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "WindowAgg",
+      "relation": null,
+      "index": null,
+      "actual_rows": 13192,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Incremental Sort",
+      "relation": null,
+      "index": null,
+      "actual_rows": 13192,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "WindowAgg",
+      "relation": null,
+      "index": null,
+      "actual_rows": 13192,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Sort",
+      "relation": null,
+      "index": null,
+      "actual_rows": 13192,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    },
+    {
+      "node_type": "Index Only Scan",
+      "relation": "stock_prices",
+      "index": "stock_prices_date_ticker_cover_idx",
+      "actual_rows": 13192,
+      "shared_hit_blocks": 69,
+      "shared_read_blocks": 0
+    }
+  ]
+}
