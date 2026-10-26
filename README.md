@@ -89,16 +89,17 @@ The Market Data dashboard brings historical prices and moving averages together 
 
 PostgreSQL stores historical open, high, low, close, and volume (OHLCV) observations. SQL uses `LAG()` for daily returns, window functions for moving averages, and `STDDEV_SAMP()` for sample volatility; common table expressions (CTEs) organize period-return calculations and performance rankings.
 
-Primary keys, database constraints, and ticker/date indexes maintain data integrity and support historical lookups. For the ranking query, a rewrite uses bounded first- and last-close lookups before ranking returns. PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` plans were used to compare the query versions. Synthetic benchmark records are kept separate from real market data and excluded from anomaly analysis; a covering-index experiment was evaluated but not retained.
+Primary keys, database constraints, and ticker/date indexes maintain data integrity and support historical lookups. The stock performance ranking query ranks stocks by percentage return over a selected date range, calculated from each stock's first and last closing prices as `((last close / first close) - 1) × 100`. The original query used a date-index bitmap scan to read all 13,192 matching price observations, then processed them through window operations and sorts to derive period returns and rankings. The revised query uses two bounded `LATERAL` lookups per stock against the `(ticker, price_date)` primary-key index—one for each closing price—before calculating returns and ranking the stocks. Both approaches return identical rankings; PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` measurements show the revised query executes faster by avoiding processing the full set of daily observations. Synthetic benchmark records are kept separate from real market data and excluded from anomaly analysis.
 
 ## Results
 
-### Database Performance
+The following local PostgreSQL benchmark measures the **stock performance ranking query**, not overall application performance. The original and optimized queries returned identical rankings across the benchmark dataset.
 
-In a local PostgreSQL benchmark, the optimized stock-ranking query reduced median execution time by **88.44%** across **1,000,300 price records and 203 tickers**. These measurements describe the local benchmark workload, not a universal performance guarantee.
-
-| Local benchmark metric | Original query | Optimized query |
+| Ranking query benchmark | Original | Optimized |
 |---|---:|---:|
 | Median execution time | 33.389 ms | 3.861 ms |
-| Execution time reduction | — | **88.44%** |
+| Query-level reduction | — | **88.44%** |
+| Speedup | — | **8.65×** |
 | Dataset | 1,000,300 price records across 203 tickers | 1,000,300 price records across 203 tickers |
+
+These are local, warm-cache measurements, not universal performance guarantees. A separate covering-index experiment measured **64.752 ms** for the original query and was rejected because it was slower than the 33.389 ms baseline.
