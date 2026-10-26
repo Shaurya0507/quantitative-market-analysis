@@ -71,7 +71,7 @@ The return histogram shows how often different daily returns occurred, making th
 
 ### Machine Learning — Local Outlier Factor
 
-**Local Outlier Factor (LOF)** uses scikit-learn to identify sessions whose combination of **daily return, relative volume, and intraday price range** differs from nearby observations. A return or volume value may look ordinary by itself while the combination is unusual, giving LOF a multivariate view alongside the individual indicators. The model trains on earlier observations and evaluates subsequent ones to avoid future-data leakage; its novelty scores and feature projections are exploratory, not forecasts.
+**Local Outlier Factor (LOF)** is an unsupervised machine learning algorithm implemented with scikit-learn. It identifies sessions whose combination of **daily return, relative volume, and intraday price range** differs from nearby observations. A return or volume value may look ordinary by itself while the combination is unusual, giving LOF a multivariate view alongside the individual indicators. The model trains on earlier observations and evaluates subsequent ones to avoid future-data leakage; its novelty scores and feature projections are exploratory, not forecasts.
 
 ![LOF novelty score timeline and feature projection](./docs/screenshots/lof-analysis.png)
 
@@ -91,11 +91,6 @@ PostgreSQL stores historical open, high, low, close, and volume (OHLCV) observat
 
 Primary keys, database constraints, and ticker/date indexes maintain data integrity and support historical lookups. For the ranking query, a rewrite uses bounded first- and last-close lookups before ranking returns. PostgreSQL `EXPLAIN (ANALYZE, BUFFERS)` plans were used to compare the query versions. Synthetic benchmark records are kept separate from real market data and excluded from anomaly analysis; a covering-index experiment was evaluated but not retained.
 
-## Additional Technical Details
-
-- On-demand ingestion and automated refresh check for newly available daily market data. Alpha Vantage free-tier limits may restrict coverage and request frequency.
-- Backend tests run with `.venv/bin/python -m pytest -q`. From `frontend/`, run `npm test`, `npm run build`, and `npm run lint`. Some backend integration tests require PostgreSQL with historical market data.
-
 ## Results
 
 ### Database Performance
@@ -107,11 +102,3 @@ In a local PostgreSQL benchmark, the optimized stock-ranking query reduced media
 | Median execution time | 33.389 ms | 3.861 ms |
 | Execution time reduction | — | **88.44%** |
 | Dataset | 1,000,300 price records across 203 tickers | 1,000,300 price records across 203 tickers |
-
-### Machine Learning Analysis
-
-LOF adds an exploratory multivariate view of unusual sessions using returns, volume, and intraday range. The dashboard presents novelty scores and feature projections; no predictive-accuracy claim is made.
-
-### Full-Stack Integration
-
-The application brings together on-demand historical data ingestion, PostgreSQL-backed analytics, statistical anomaly detection and LOF analysis, FastAPI endpoints, interactive React visualizations, and Docker Compose deployment.
